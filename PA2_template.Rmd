@@ -1,0 +1,108 @@
+---
+title: 'Programming assignment 2: reproducible research. Effects of major storms and
+  weather events on human population and economy.'
+author: "David García Sabaté"
+date: "3/5/2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+```
+
+## Programming assignment 2: reproducible research. Effects of major storms and weather events on human population and economy.  
+
+### Synopsis
+
+By far, tornadoes are the type of natural catastrophe that has the greatest impact on human health, having added almost 6000 victims and 90000 injured in the period analyzed. However, in economic terms, floods are the most expensive natural phenomenon.
+
+### Data Processing
+
+Downloading the "repdata_data_StormData.csv" dataset
+
+```{r import}
+if (!exists("dataframe")){
+  zipUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+  zipFile <- "repdata_data_StormData.csv.bz2"
+  download.file(zipUrl, zipFile, mode = "wb")
+}
+```
+
+Now we have tib_observations tibble object, and see a sample of 10 observations
+
+```{r tibble}
+if (!exists("dataframe")){
+  dataframe <- read.csv("repdata_data_StormData.csv.bz2")
+}  
+tib_observations <- as_tibble(dataframe)
+head(tib_observations, 10)
+```
+
+## RESULTS
+### Which types of events are most harmful to population health?
+
+To answer this question we will measure Fatalities and Injuries. We will group the sum of fatalities and injuries by type of event.
+
+```{r}
+tib_observations_fatal <- tib_observations %>%
+  group_by(EVTYPE) %>%
+  summarize(fatalities = sum(FATALITIES)) %>%
+  arrange(desc(fatalities)) %>%
+  head(20)
+
+ggplot(tib_observations_fatal, mapping = aes(reorder(EVTYPE, -fatalities), fatalities)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90)) + 
+   labs(
+    title = "Top 20 dead cause events",
+    x = "Event",
+    y = "Number of fatalities"
+  )
+```
+
+```{r}
+tib_observations_injuries <- tib_observations %>%
+  group_by(EVTYPE) %>%
+  summarize(injuries = sum(INJURIES)) %>%
+  arrange(desc(injuries)) %>%
+  head(20)
+
+ggplot(tib_observations_injuries, mapping = aes(reorder(EVTYPE, -injuries), injuries)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90)) + 
+   labs(
+    title = "Top 20 injury cause events",
+    x = "Event",
+    y = "Number of injuries"
+  )
+```
+
+### Which types of events have the greatest economic consequences?
+
+We are only taking into account figures whose PROPDMGEXP variable value is B (Billions). These are the most expensive.
+
+```{r}
+tib_observations_economic <- tib_observations %>%
+  filter(PROPDMGEXP == "B") %>%
+  group_by(EVTYPE) %>%
+  summarize(total_amount = sum(PROPDMG)) %>%
+  arrange(desc(total_amount)) %>%
+  head(10)
+
+ggplot(tib_observations_economic, mapping = aes(reorder(EVTYPE, -total_amount), total_amount)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90)) + 
+   labs(
+    title = "Top 10 most devastating events in economic value",
+    x = "Event",
+    y = "Billions of $"
+  )
+```
+
+
